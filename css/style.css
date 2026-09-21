@@ -809,6 +809,13 @@ body {
   .btn {
     padding: 0 12px;
   }
+  .re-row .row-btn {
+    min-width: 26px;
+    padding: 0 4px;
+  }
+  .re-row .row-btn.solid {
+    padding: 0 8px;
+  }
 }
 .re-chapter {
   font-size: 11px;

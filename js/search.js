@@ -10,6 +10,7 @@
   let reTimer = null;
   let searchMode = "regex";
   let scopeAll = false;
+  let lastQuery = null;
 
   const findbar = $("findbar");
 
@@ -49,6 +50,18 @@
     return new RegExp(source, flags);
   }
 
+  function querySignature() {
+    return (
+      searchMode +
+      "\u0000" +
+      getFlags() +
+      "\u0000" +
+      (scopeAll ? "1" : "0") +
+      "\u0000" +
+      $("re-pattern").value
+    );
+  }
+
   /* ================= 匹配计算 ================= */
   function scheduleRecompute() {
     if (findbar.hidden) return;
@@ -60,6 +73,7 @@
     const pattern = $("re-pattern").value;
     const list = $("re-matches");
 
+    lastQuery = querySignature();
     matches = [];
     currentIndex = 0;
 
@@ -312,6 +326,11 @@
     selectMatch(currentIndex);
   }
 
+  function runSearch() {
+    if (lastQuery !== querySignature()) recomputeMatches();
+    if (matches.length) selectMatch(0);
+  }
+
   /* ================= 替换 ================= */
   function expandReplacement(tpl, m, fullText) {
     return tpl.replace(/\$(\$|&|`|'|\d{1,2}|<[^>]*>)/g, (whole, tok) => {
@@ -487,10 +506,15 @@
 
   $("find-prev").addEventListener("click", () => goToMatch(-1));
   $("find-next").addEventListener("click", () => goToMatch(1));
+  $("find-run").addEventListener("click", runSearch);
 
   $("re-pattern").addEventListener("keydown", (e) => {
     if (e.key !== "Enter") return;
     e.preventDefault();
+    if (lastQuery !== querySignature()) {
+      runSearch();
+      return;
+    }
     goToMatch(e.shiftKey ? -1 : 1);
   });
 
