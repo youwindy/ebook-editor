@@ -31,31 +31,6 @@
 - 保存为 `.txt`（UTF-8 无 BOM）
 - **导出为 EPUB**：按空行分段生成 XHTML，自动生成 OPF / nav / NCX，打包为 `.epub`
 
-## 在线使用（GitHub Pages）
-
-1. 将本项目推送到 GitHub 仓库的 `main` 分支
-2. 仓库 **Settings → Pages → Build and deployment**
-   - Source 选择 **Deploy from a branch**
-   - Branch 选择 **main**，目录选择 **/ (root)**，保存
-   - （仓库已含 `.github/workflows/static.yml`，也可用 **GitHub Actions** 方式部署）
-3. 稍等片刻，访问 `https://<用户名>.github.io/ebook-editor/`
-
-> 本项目为纯静态站点，无需 `.nojekyll`（不含下划线开头的目录）。
-
-## 本地运行
-
-可直接双击 `index.html`，或用任意静态服务器：
-
-```bash
-# Node
-npx serve .
-
-# Python
-python -m http.server 8080
-```
-
-> 建议用静态服务器访问：Service Worker（离线/安装）需要 `http(s)://`，`file://` 下不会注册，但应用本身仍可正常使用。
-
 ## 目录结构
 
 ```
@@ -108,17 +83,3 @@ js/jszip.min.js         本地内置依赖
 
 所有操作均在浏览器本地进行，不联网、不上传任何文件。
 
-## 浏览器兼容
-
-现代版 Chrome / Edge / Firefox / Safari。
-
-- 桌面端宽度 ≥900px：侧栏目录 + 源码 / 预览分栏
-- 移动端：底部导航栏 + 侧滑抽屉目录
-
-## 已知限制
-
-- CSS 中的 `@import` 不会递归内联，仅处理 `url()`
-- `srcset`、`<source>`、行内 `style` 中的 `url()` 不会内联
-- TXT 导出编码固定为 UTF-8（无 BOM），不支持导出 GBK
-- 全部章节文本常驻内存，超大文件占用较高
-- 保存 / 导出会生成新文件，不会覆盖原文件
