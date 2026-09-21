@@ -3,7 +3,7 @@
   "use strict";
 
   const U = window.EpubApp;
-  const { $, dirOf, normalizePath, guessMime, findZipKey } = U;
+  const { $, dirOf, normalizePath, guessMime, findZipKey, escapeHtml } = U;
 
   const editor = $("editor");
 
@@ -17,15 +17,7 @@
     return commitCurrent()
       .then(() => {
         if (seq !== openSeq) return null;
-        if (U.chapterTextCache[i] !== undefined) {
-          return { i: i, text: U.chapterTextCache[i] };
-        }
-        const f = U.zip.file(U.chapters[i].zipPath);
-        if (!f) return { i: i, text: "" };
-        return f.async("string").then((t) => {
-          U.chapterTextCache[i] = t;
-          return { i: i, text: t };
-        });
+        return U.readChapter(i).then((t) => ({ i: i, text: t }));
       })
       .then((res) => {
         if (seq !== openSeq || !res) return;
@@ -54,8 +46,7 @@
     if (!U.current) return Promise.resolve();
     const text = editor.value;
     if (text !== U.current.originalText) {
-      U.zip.file(U.current.zipPath, text);
-      U.chapterTextCache[U.current.chapterIndex] = text;
+      U.writeChapter(U.current.chapterIndex, text);
       U.current.originalText = text;
       U.markDirty();
     }
@@ -85,7 +76,23 @@
     return url;
   }
 
+  function txtPreviewHtml(text) {
+    const asHtml = $("txt-preview-html") && $("txt-preview-html").checked;
+    if (asHtml) return "<!DOCTYPE html>\n" + text;
+    return (
+      "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>" +
+      "body{margin:0;padding:14px;font-family:system-ui,'PingFang SC','Microsoft YaHei',sans-serif;" +
+      "font-size:16px;line-height:1.75;color:#111827;white-space:pre-wrap;word-break:break-word}" +
+      "</style></head><body>" +
+      escapeHtml(text) +
+      "</body></html>"
+    );
+  }
+
   function buildPreviewHtml(html, chapterZipPath) {
+    if (U.mode === "txt") {
+      return Promise.resolve(txtPreviewHtml(html));
+    }
     return new Promise((resolve) => {
       const src = html.replace(/<\?xml[^>]*\?>/i, "");
       if (!U.zip || !chapterZipPath) return resolve(src);
@@ -221,11 +228,18 @@
   }
 
   /* ================= 编辑器事件 ================= */
-  editor.addEventListener("input", () => {
-    if (U.current) {
+  function syncCurrentText() {
+    if (!U.current) return;
+    if (U.mode === "txt") {
+      U.current.text = editor.value;
+    } else {
       U.chapterTextCache[U.current.chapterIndex] = editor.value;
-      U.markDirty();
     }
+    U.markDirty();
+  }
+
+  editor.addEventListener("input", () => {
+    syncCurrentText();
     updatePreview(false);
     U.scheduleRecompute();
   });
@@ -237,10 +251,7 @@
     const t = editor.selectionEnd;
     editor.value = editor.value.slice(0, s) + "  " + editor.value.slice(t);
     editor.selectionStart = editor.selectionEnd = s + 2;
-    if (U.current) {
-      U.chapterTextCache[U.current.chapterIndex] = editor.value;
-      U.markDirty();
-    }
+    syncCurrentText();
     updatePreview(false);
     U.scheduleRecompute();
   });

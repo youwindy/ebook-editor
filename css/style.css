@@ -824,3 +824,320 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ========== 模式显隐（epub / txt 同页切换） ========== */
+[hidden] {
+  display: none !important;
+}
+body.mode-epub .txt-only {
+  display: none;
+}
+body.mode-txt .epub-only {
+  display: none;
+}
+
+/* ========== TXT 拆章面板 ========== */
+.txt-panel-body {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.txt-panel-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.txt-panel-body select {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 16px;
+  font-family: inherit;
+  background: #fff;
+  color: #111827;
+}
+.txt-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.txt-split-info {
+  font-size: 12px;
+  color: #6b7280;
+}
+.txt-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #374151;
+  user-select: none;
+}
+.txt-check input {
+  width: 16px;
+  height: 16px;
+}
+.meta-actions {
+  padding: 0 16px 16px;
+  display: flex;
+  gap: 10px;
+}
+
+.btn-mini {
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.12s;
+}
+.btn-mini:active {
+  background: #f3f4f6;
+}
+.btn-mini.primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+.btn-mini.primary:active {
+  background: #1d4ed8;
+}
+
+@media (min-width: 900px) {
+  .txt-panel-body select {
+    font-size: 14px;
+  }
+}
+
+/* ============================================================
+   视觉精修（浅色）
+   ============================================================ */
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --surface-2: #f9fafb;
+  --border: #e5e7eb;
+  --border-2: #eef0f3;
+  --border-strong: #d1d5db;
+  --text: #111827;
+  --text-2: #6b7280;
+  --text-3: #9ca3af;
+  --primary: #2563eb;
+  --primary-strong: #1d4ed8;
+  --primary-weak: #dbeafe;
+  --topbar: #1f2937;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow-1: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-2: 0 4px 16px rgba(15, 23, 42, 0.08);
+  --shadow-3: 0 16px 40px rgba(15, 23, 42, 0.16);
+  --ring: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+::selection {
+  background: rgba(37, 99, 235, 0.18);
+}
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+  background-clip: padding-box;
+}
+
+/* 顶栏 */
+.topbar {
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.16);
+}
+.icon-btn,
+.btn {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+.icon-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.btn.primary {
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
+}
+.btn.primary:disabled {
+  box-shadow: none;
+}
+
+/* 面板与卡片 */
+.meta,
+.findbar,
+.tabs {
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
+}
+.drawer {
+  box-shadow: 2px 0 28px rgba(15, 23, 42, 0.14);
+}
+
+/* 输入控件 */
+.meta-field input,
+.txt-panel-body select {
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    background 0.15s;
+}
+.meta-field input:hover:not(:disabled),
+.txt-panel-body select:hover {
+  border-color: var(--border-strong);
+}
+.re-row:hover {
+  border-color: var(--border-strong);
+}
+
+/* 悬停态（仅桌面指针） */
+@media (hover: hover) {
+  .icon-btn:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
+  .btn:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
+  .btn.primary:hover {
+    background: var(--primary-strong);
+  }
+  .btn-mini:hover {
+    background: var(--surface-2);
+    border-color: var(--border-strong);
+  }
+  .btn-mini.primary:hover {
+    background: var(--primary-strong);
+    border-color: var(--primary-strong);
+  }
+  .drawer-close:hover {
+    background: #eef1f5;
+  }
+  .chap:hover {
+    background: var(--surface-2);
+  }
+  .row-btn:hover {
+    background: #eef1f5;
+  }
+  .icon-btn.xs:hover {
+    background: #eef1f5;
+  }
+  .mode-toggle button:hover {
+    color: var(--primary);
+  }
+  .re-item:hover {
+    background: var(--surface-2);
+  }
+}
+
+/* ============================================================
+   移动端底部导航栏
+   ============================================================ */
+.bottom-nav {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  .topbar #menuBtn {
+    display: none;
+  }
+
+  .tabs {
+    display: none;
+  }
+
+  .bottom-nav {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 95;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -2px 18px rgba(15, 23, 42, 0.06);
+  }
+  .bn-item {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 56px;
+    padding: 0;
+    font-size: 11px;
+    font-family: inherit;
+    color: var(--text-3);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      color 0.15s,
+      background 0.15s;
+  }
+  .bn-item svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .bn-item.active {
+    color: var(--primary);
+  }
+  .bn-item:active {
+    background: rgba(37, 99, 235, 0.06);
+  }
+
+  .workspace {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom));
+  }
+}

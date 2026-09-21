@@ -189,7 +189,7 @@
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "chap";
-      btn.title = ch.zipPath;
+      btn.title = ch.zipPath || ch.label || "";
       btn.innerHTML =
         '<span class="chap-num">' +
         (idx + 1) +
@@ -253,17 +253,24 @@
   /* ================= 加载 EPUB ================= */
   function loadEpub(file) {
     U.resetState();
+    U.mode = "epub";
+    U.docName = file.name;
     U.fileName = file.name.replace(/\.epub$/i, "") + "-edited.epub";
 
-    return JSZip.loadAsync(file)
-      .then((z) => {
-        U.zip = z;
-        U.buildZipKeyMap();
+    return JSZip.loadAsync(file).then((z) =>
+      loadFromZip(z, file.name, file.size),
+    );
+  }
 
-        const cf = U.zip.file("META-INF/container.xml");
-        if (!cf) throw new Error("\u7f3a\u5c11 META-INF/container.xml");
-        return cf.async("string");
-      })
+  function loadFromZip(z, displayName, size) {
+    U.zip = z;
+    U.buildZipKeyMap();
+
+    const cf = U.zip.file("META-INF/container.xml");
+    if (!cf) throw new Error("\u7f3a\u5c11 META-INF/container.xml");
+
+    return cf
+      .async("string")
       .then((xml) => {
         const cDoc = new DOMParser().parseFromString(xml, "application/xml");
         if (hasParseError(cDoc)) throw new Error("container.xml \u89e3\u6790\u5931\u8d25");
@@ -303,11 +310,21 @@
       .then(() => {
         $("saveBtn").disabled = false;
 
-        const kb =
-          file.size < 1048576
-            ? (file.size / 1024).toFixed(0) + " KB"
-            : (file.size / 1048576).toFixed(1) + " MB";
-        setStatus(file.name + " \xb7 " + kb + " \xb7 " + U.chapters.length + " \u7ae0");
+        let extra = "";
+        if (typeof size === "number" && size > 0) {
+          const kb =
+            size < 1048576
+              ? (size / 1024).toFixed(0) + " KB"
+              : (size / 1048576).toFixed(1) + " MB";
+          extra = " \xb7 " + kb;
+        }
+        setStatus(
+          (displayName || U.docName) +
+            extra +
+            " \xb7 " +
+            U.chapters.length +
+            " \u7ae0",
+        );
 
         if (U.chapters.length) return U.openChapter(0);
       });
@@ -384,9 +401,9 @@
     setStatus("\u6b63\u5728\u6253\u5305\u2026");
     U.commitCurrent()
       .then(() => {
-        const opfXml =
-          '<?xml version="1.0" encoding="UTF-8"?>\n' +
-          new XMLSerializer().serializeToString(U.opfDoc);
+        let ser = new XMLSerializer().serializeToString(U.opfDoc);
+        ser = ser.replace(/^\s*<\?xml[^>]*\?>\s*/i, "");
+        const opfXml = '<?xml version="1.0" encoding="UTF-8"?>\n' + ser;
         U.zip.file(U.opfPath, opfXml);
         return rebuildEpub();
       })
@@ -414,6 +431,7 @@
   E.highlightToc = highlightToc;
   E.preloadAllChapters = preloadAllChapters;
   E.loadEpub = loadEpub;
+  E.loadFromZip = loadFromZip;
   E.saveEpub = saveEpub;
   E.rebuildEpub = rebuildEpub;
   E.deliver = deliver;

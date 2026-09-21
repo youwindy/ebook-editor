@@ -16,6 +16,8 @@
   let chapterTitles = Object.create(null);
   let chapterTextCache = Object.create(null);
   let dirty = false;
+  let mode = "epub";
+  let docName = "";
 
   /* 路径 → zip key 索引 */
   function buildZipKeyMap() {
@@ -35,12 +37,12 @@
   function markDirty() {
     if (dirty) return;
     dirty = true;
-    document.title = "\u2022 EPUB \u7f16\u8f91\u5668";
+    document.title = "\u2022 \u7535\u5b50\u4e66\u7f16\u8f91\u5668";
   }
 
   function clearDirty() {
     dirty = false;
-    document.title = "EPUB \u7f16\u8f91\u5668";
+    document.title = "\u7535\u5b50\u4e66\u7f16\u8f91\u5668";
   }
 
   function resetState() {
@@ -55,6 +57,45 @@
     chapterTitles = Object.create(null);
     chapterTextCache = Object.create(null);
     clearDirty();
+  }
+
+  /* ================= 通用文档访问（epub / txt 共用） ================= */
+  function getChapterText(i) {
+    if (mode === "txt") {
+      const ch = chapters[i];
+      return ch ? ch.text || "" : "";
+    }
+    return chapterTextCache[i] || "";
+  }
+
+  function readChapter(i) {
+    if (mode === "txt") {
+      const ch = chapters[i];
+      return Promise.resolve(ch ? ch.text || "" : "");
+    }
+    if (chapterTextCache[i] !== undefined) {
+      return Promise.resolve(chapterTextCache[i]);
+    }
+    const ch = chapters[i];
+    const f = zip && ch ? zip.file(ch.zipPath) : null;
+    if (!f) return Promise.resolve("");
+    return f.async("string").then((t) => {
+      chapterTextCache[i] = t;
+      return t;
+    });
+  }
+
+  function writeChapter(i, text) {
+    if (mode === "txt") {
+      if (chapters[i]) chapters[i].text = text;
+      return;
+    }
+    chapterTextCache[i] = text;
+    if (chapters[i]) zip.file(chapters[i].zipPath, text);
+  }
+
+  function saveDoc() {
+    return mode === "epub" ? U.saveEpub() : U.saveTxt();
   }
 
   /* 导出 */
@@ -102,9 +143,21 @@
   Object.defineProperty(S, "dirty", {
     get: () => dirty,
   });
+  Object.defineProperty(S, "mode", {
+    get: () => mode,
+    set: (v) => { mode = v; },
+  });
+  Object.defineProperty(S, "docName", {
+    get: () => docName,
+    set: (v) => { docName = v; },
+  });
   S.buildZipKeyMap = buildZipKeyMap;
   S.findZipKey = findZipKey;
   S.markDirty = markDirty;
   S.clearDirty = clearDirty;
   S.resetState = resetState;
+  S.getChapterText = getChapterText;
+  S.readChapter = readChapter;
+  S.writeChapter = writeChapter;
+  S.saveDoc = saveDoc;
 })();

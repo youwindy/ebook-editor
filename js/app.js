@@ -18,15 +18,22 @@
   const drawer = $("drawer");
   const backdrop = $("backdrop");
 
+  function setTocNav(active) {
+    const el = document.querySelector('#bottomNav .bn-item[data-nav="toc"]');
+    if (el) el.classList.toggle("active", active);
+  }
+
   function openDrawer() {
     drawer.classList.add("open");
     drawer.setAttribute("aria-hidden", "false");
     backdrop.classList.add("show");
+    setTocNav(true);
   }
   function closeDrawer() {
     drawer.classList.remove("open");
     drawer.setAttribute("aria-hidden", "true");
     backdrop.classList.remove("show");
+    setTocNav(false);
   }
   function toggleDrawer() {
     if (drawer.classList.contains("open")) closeDrawer();
@@ -48,16 +55,35 @@
   });
   backdrop.addEventListener("click", closeDrawer);
 
-  /* ================= Tab ================= */
+  /* ================= 面板切换 ================= */
+  function showPane(name) {
+    document
+      .querySelectorAll(".tab")
+      .forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
+    $("pane-code").classList.toggle("show", name === "code");
+    $("pane-preview").classList.toggle("show", name === "preview");
+    if (name === "preview") U.updatePreview(true);
+    document.querySelectorAll("#bottomNav .bn-item").forEach((b) => {
+      if (b.dataset.nav !== "toc")
+        b.classList.toggle("active", b.dataset.nav === name);
+    });
+  }
+  U.showPane = showPane;
+
   document.querySelectorAll(".tab").forEach((tab) => {
-    tab.addEventListener("click", () => {
-      document
-        .querySelectorAll(".tab")
-        .forEach((t) => t.classList.toggle("active", t === tab));
-      const t = tab.dataset.tab;
-      $("pane-code").classList.toggle("show", t === "code");
-      $("pane-preview").classList.toggle("show", t === "preview");
-      if (t === "preview") U.updatePreview(true);
+    tab.addEventListener("click", () => showPane(tab.dataset.tab));
+  });
+
+  /* ================= 底部导航（移动端） ================= */
+  document.querySelectorAll("#bottomNav .bn-item").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const nav = btn.dataset.nav;
+      if (nav === "toc") {
+        toggleDrawer();
+        return;
+      }
+      showPane(nav);
+      closeDrawer();
     });
   });
 
@@ -71,6 +97,35 @@
     );
   }
 
+  function setMode(mode) {
+    const isTxt = mode === "txt";
+    U.mode = mode;
+    document.body.classList.toggle("mode-epub", !isTxt);
+    document.body.classList.toggle("mode-txt", isTxt);
+    document.querySelectorAll(".txt-only").forEach((el) => {
+      el.hidden = !isTxt;
+    });
+    document.querySelectorAll(".epub-only").forEach((el) => {
+      el.hidden = isTxt;
+    });
+  }
+  U.setMode = setMode;
+
+  function handleFile(file) {
+    const name = file.name.toLowerCase();
+    if (/\.epub$/.test(name)) {
+      setMode("epub");
+      U.setStatus("正在解压…");
+      return U.loadEpub(file);
+    }
+    if (/\.txt$/.test(name)) {
+      setMode("txt");
+      U.setStatus("正在读取…");
+      return U.loadTxt(file);
+    }
+    return Promise.reject(new Error("请打开 .epub 或 .txt 文件"));
+  }
+
   $("openBtn").addEventListener("click", () => $("fileInput").click());
 
   $("fileInput").addEventListener("change", (e) => {
@@ -78,8 +133,7 @@
     e.target.value = "";
     if (!file) return;
     if (!confirmDiscard()) return;
-    U.setStatus("正在解压…");
-    U.loadEpub(file).catch((err) => {
+    handleFile(file).catch((err) => {
       console.error(err);
       U.setStatus("加载失败：" + err.message);
     });
@@ -88,14 +142,22 @@
   /* ================= 元数据 ================= */
   U.META_KEYS.forEach((k) => {
     $("m-" + k).addEventListener("input", () => {
-      const el = U.ensureDc(k);
-      if (el) el.textContent = $("m-" + k).value;
+      if (U.mode === "epub") {
+        const el = U.ensureDc(k);
+        if (el) el.textContent = $("m-" + k).value;
+      }
       U.markDirty();
     });
   });
 
+  /* ================= 转换 ================= */
+  const toEpubBtn = $("txt-to-epub");
+  if (toEpubBtn) toEpubBtn.addEventListener("click", U.txtToEpub);
+  const toTxtBtn = $("epub-to-txt");
+  if (toTxtBtn) toTxtBtn.addEventListener("click", U.epubToTxt);
+
   /* ================= 保存 ================= */
-  $("saveBtn").addEventListener("click", U.saveEpub);
+  $("saveBtn").addEventListener("click", () => U.saveDoc());
 
   /* ================= 全局快捷键 ================= */
   document.addEventListener("keydown", (e) => {
@@ -121,7 +183,7 @@
 
     if (mod && (e.key === "s" || e.key === "S")) {
       e.preventDefault();
-      if (!$("saveBtn").disabled) U.saveEpub();
+      if (!$("saveBtn").disabled) U.saveDoc();
       return;
     }
   });
@@ -162,18 +224,29 @@
     dropOverlay.classList.remove("show");
     const f = e.dataTransfer.files[0];
     if (!f) return;
-    if (!/\.epub$/i.test(f.name)) {
-      U.setStatus("请拖入 .epub 文件");
+    if (!/\.(epub|txt)$/i.test(f.name)) {
+      U.setStatus("请拖入 .epub 或 .txt 文件");
       return;
     }
     if (!confirmDiscard()) return;
-    U.setStatus("正在解压…");
-    U.loadEpub(f).catch((err) => {
+    handleFile(f).catch((err) => {
       console.error(err);
       U.setStatus("加载失败：" + err.message);
     });
   });
 
   /* ================= 初始化 ================= */
+  setMode(U.mode || "epub");
   U.updateModeUI();
+  showPane("code");
+
+  /* ================= PWA ================= */
+  if (
+    "serviceWorker" in navigator &&
+    location.protocol.indexOf("http") === 0
+  ) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    });
+  }
 })();

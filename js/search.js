@@ -85,7 +85,7 @@
     const targets = [];
     if (scopeAll) {
       for (let ci = 0; ci < U.chapters.length; ci++) {
-        targets.push({ idx: ci, text: U.chapterTextCache[ci] });
+        targets.push({ idx: ci, text: U.getChapterText(ci) });
       }
     } else {
       const curIdx = U.current ? U.current.chapterIndex : -1;
@@ -165,7 +165,7 @@
       const m = matches[i];
       const srcText =
         m.chapterIndex >= 0
-          ? U.chapterTextCache[m.chapterIndex] || ""
+          ? U.getChapterText(m.chapterIndex)
           : $("editor").value;
       const ctx = buildContextParts(srcText, m);
 
@@ -344,7 +344,7 @@
     const ci = m.chapterIndex;
 
     const text =
-      ci >= 0 ? U.chapterTextCache[ci] || "" : $("editor").value;
+      ci >= 0 ? U.getChapterText(ci) : $("editor").value;
     const rep = applyReplacement(tpl, m, text);
     const caret = m.index + rep.length;
 
@@ -352,8 +352,7 @@
       text.slice(0, m.index) + rep + text.slice(m.index + m.length);
 
     if (ci >= 0) {
-      U.chapterTextCache[ci] = newText;
-      U.zip.file(U.chapters[ci].zipPath, newText);
+      U.writeChapter(ci, newText);
     }
 
     if (U.current && ci === U.current.chapterIndex) {
@@ -415,7 +414,7 @@
       const list = groups[keys[k]];
 
       let text =
-        ci >= 0 ? U.chapterTextCache[ci] || "" : $("editor").value;
+        ci >= 0 ? U.getChapterText(ci) : $("editor").value;
 
       for (let j = list.length - 1; j >= 0; j--) {
         const mm = list[j];
@@ -427,8 +426,7 @@
       }
 
       if (ci >= 0) {
-        U.chapterTextCache[ci] = text;
-        U.zip.file(U.chapters[ci].zipPath, text);
+        U.writeChapter(ci, text);
       }
       if (U.current && ci === U.current.chapterIndex) {
         $("editor").value = text;
