@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1f2937" />
+    <title>EPUB 编辑器</title>
+    <script src="./js/jszip.min.js"></script>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <button type="button" class="icon-btn" id="menuBtn" aria-label="目录">
+          ☰
+        </button>
+        <button
+          type="button"
+          class="icon-btn"
+          id="findBtn"
+          aria-label="查找替换"
+        >
+          🔍
+        </button>
+        <div class="brand">EPUB</div>
+        <div class="file-status" id="status">未打开文件</div>
+        <input
+          type="file"
+          id="fileInput"
+          accept=".epub,application/epub+zip"
+          hidden
+        />
+        <button type="button" class="btn" id="openBtn">打开</button>
+        <button type="button" class="btn primary" id="saveBtn" disabled>
+          保存
+        </button>
+      </header>
+
+      <div class="workspace">
+        <section class="content">
+          <details class="meta" id="metaPanel">
+            <summary>书籍信息</summary>
+            <div class="meta-grid">
+              <div class="meta-field">
+                <label>书名</label><input id="m-title" disabled />
+              </div>
+              <div class="meta-field">
+                <label>作者</label><input id="m-creator" disabled />
+              </div>
+              <div class="meta-field">
+                <label>语言</label><input id="m-language" disabled />
+              </div>
+              <div class="meta-field">
+                <label>标识符</label><input id="m-identifier" disabled />
+              </div>
+            </div>
+          </details>
+
+          <div class="findbar" id="findbar" hidden>
+            <div class="findbar-head">
+              <div class="mode-toggle" id="modeToggle">
+                <button type="button" data-mode="regex" class="active">
+                  正则
+                </button>
+                <button type="button" data-mode="text">文本</button>
+              </div>
+              <span class="re-summary" id="re-summary">—</span>
+              <button
+                type="button"
+                class="icon-btn xs"
+                id="findClose"
+                aria-label="关闭"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div class="findbar-body">
+              <div class="re-row" id="row-find">
+                <input
+                  type="text"
+                  id="re-pattern"
+                  placeholder="输入正则或文本"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  autocorrect="off"
+                  spellcheck="false"
+                />
+                <button
+                  type="button"
+                  class="row-btn nav-btn"
+                  id="find-prev"
+                  aria-label="上一个"
+                  title="上一个 (Shift+Enter)"
+                >
+                  ▲
+                </button>
+                <button
+                  type="button"
+                  class="row-btn nav-btn"
+                  id="find-next"
+                  aria-label="下一个"
+                  title="下一个 (Enter)"
+                >
+                  ▼
+                </button>
+                <button
+                  type="button"
+                  class="row-btn flag"
+                  id="scope-all"
+                  title="搜索全部章节"
+                >
+                  全
+                </button>
+                <button
+                  type="button"
+                  class="row-btn flag"
+                  data-flag="i"
+                  title="忽略大小写"
+                >
+                  i
+                </button>
+                <button
+                  type="button"
+                  class="row-btn flag"
+                  data-flag="m"
+                  title="多行 ^ $"
+                >
+                  m
+                </button>
+                <button
+                  type="button"
+                  class="row-btn flag"
+                  data-flag="s"
+                  title=". 匹配换行"
+                >
+                  s
+                </button>
+              </div>
+
+              <div class="re-row" id="row-replace">
+                <input
+                  type="text"
+                  id="re-replace"
+                  placeholder="替换为"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  autocorrect="off"
+                  spellcheck="false"
+                />
+                <button type="button" class="row-btn solid" id="re-replace-one">
+                  替换
+                </button>
+                <button
+                  type="button"
+                  class="row-btn primary"
+                  id="re-replace-all"
+                >
+                  全部
+                </button>
+              </div>
+
+              <div class="re-matches" id="re-matches">
+                <div class="re-hint">输入内容开始匹配</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tabs" id="tabs">
+            <button type="button" class="tab active" data-tab="code">
+              源码
+            </button>
+            <button type="button" class="tab" data-tab="preview">预览</button>
+          </div>
+
+          <div class="panes">
+            <div class="pane show" id="pane-code">
+              <textarea
+                id="editor"
+                placeholder="在目录里选一章开始编辑…"
+                disabled
+                spellcheck="false"
+                autocapitalize="off"
+                autocorrect="off"
+              ></textarea>
+            </div>
+            <div class="pane" id="pane-preview">
+              <iframe id="preview" sandbox="allow-same-origin"></iframe>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <aside class="drawer" id="drawer" aria-hidden="true">
+      <div class="drawer-head">
+        <span class="drawer-title">目录</span>
+        <button
+          type="button"
+          class="drawer-close"
+          id="closeDrawer"
+          aria-label="关闭目录"
+        >
+          ✕
+        </button>
+      </div>
+      <div class="toc" id="toc">
+        <div class="empty">打开一个 EPUB<br />开始编辑</div>
+      </div>
+    </aside>
+
+    <div class="backdrop" id="backdrop"></div>
+
+    <div class="drop-overlay" id="dropOverlay">
+      <div class="drop-overlay-inner">松开以打开 EPUB</div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/epub.js"></script>
+    <script src="js/editor.js"></script>
+    <script src="js/search.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
