@@ -1,5 +1,5 @@
 /* Service Worker：应用外壳离线缓存 */
-const CACHE = "ebook-editor-v4";
+const CACHE = "ebook-editor-v5";
 
 const ASSETS = [
   "./",
@@ -7,16 +7,16 @@ const ASSETS = [
   "./manifest.webmanifest",
   "./icons/icon.svg",
   "./icons/icon-maskable.svg",
-  "./css/style.css?v=4",
-  "./js/utils.js?v=4",
-  "./js/state.js?v=4",
-  "./js/epub.js?v=4",
-  "./js/txt.js?v=4",
-  "./js/convert.js?v=4",
-  "./js/editor.js?v=4",
-  "./js/search.js?v=4",
-  "./js/app.js?v=4",
-  "./js/jszip.min.js?v=4",
+  "./css/style.css?v=5",
+  "./js/utils.js?v=5",
+  "./js/state.js?v=5",
+  "./js/epub.js?v=5",
+  "./js/txt.js?v=5",
+  "./js/convert.js?v=5",
+  "./js/editor.js?v=5",
+  "./js/search.js?v=5",
+  "./js/app.js?v=5",
+  "./js/jszip.min.js?v=5",
 ];
 
 self.addEventListener("install", (e) => {
